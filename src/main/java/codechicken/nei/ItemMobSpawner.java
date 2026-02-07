@@ -4,7 +4,6 @@ import java.lang.reflect.Modifier;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 
 import net.minecraft.creativetab.CreativeTabs;
@@ -154,15 +153,15 @@ public class ItemMobSpawner extends ItemBlock {
     private static void logEntityCreationError(Class<?> entityClass, int id, Throwable t) {
         String entityName = IDtoNameMap.getOrDefault(id, "unknown");
         if (entityClass == null) {
-            NEIClientConfig.logger.error(
-                "Failed to create entity instance: Class is null for ID {}, Name {}", 
-                id, entityName, t
-            );
+            NEIClientConfig.logger
+                    .error("Failed to create entity instance: Class is null for ID {}, Name {}", id, entityName, t);
         } else {
             NEIClientConfig.logger.error(
-                "Failed to create instance of entity: Class {}, ID {}, Name {}", 
-                entityClass.getName(), id, entityName, t
-            );
+                    "Failed to create instance of entity: Class {}, ID {}, Name {}",
+                    entityClass.getName(),
+                    id,
+                    entityName,
+                    t);
         }
     }
 
@@ -178,20 +177,21 @@ public class ItemMobSpawner extends ItemBlock {
         EntityLiving pig = entityHashMap.get(idPig);
         if (pig == null) {
             World world = NEIClientUtils.mc() != null ? NEIClientUtils.mc().theWorld : null;
-            
+
             if (world != null) {
                 try {
                     pig = new EntityPig(world);
                     entityHashMap.put(idPig, pig);
                     NEIClientConfig.logger.debug("Created fallback pig entity for ID: {}", originalId);
                 } catch (Exception e) {
-                    NEIClientConfig.logger.error("Failed to create fallback pig entity for original ID: {}", originalId, e);
+                    NEIClientConfig.logger
+                            .error("Failed to create fallback pig entity for original ID: {}", originalId, e);
                 }
             } else {
                 NEIClientConfig.logger.warn("World is null, cannot create fallback entity for ID: {}", originalId);
             }
         }
-        
+
         return pig;
     }
 
@@ -212,9 +212,9 @@ public class ItemMobSpawner extends ItemBlock {
             }
 
             try {
-                for (Map.Entry<Class<? extends Entity>, String> entry : 
-                     ((Map<Class<? extends Entity>, String>) EntityList.classToStringMapping).entrySet()) {
-                    
+                for (Map.Entry<Class<? extends Entity>, String> entry : ((Map<Class<? extends Entity>, String>) EntityList.classToStringMapping)
+                        .entrySet()) {
+
                     Class<? extends Entity> clazz = entry.getKey();
                     String name = entry.getValue();
 
@@ -223,7 +223,7 @@ public class ItemMobSpawner extends ItemBlock {
                         if (id != null) {
                             IDtoNameMap.put(id, name);
                             ENTITY_CLASS_TO_NAME_CACHE.put(clazz, name);
-                            
+
                             if ("Pig".equals(name)) {
                                 idPig = id;
                                 NEIClientConfig.logger.debug("Set pig entity ID to: {}", id);
@@ -233,7 +233,7 @@ public class ItemMobSpawner extends ItemBlock {
                 }
                 loaded = true;
                 NEIClientConfig.logger.info("Loaded {} spawner entity mappings", IDtoNameMap.size());
-                
+
             } catch (Exception e) {
                 NEIClientConfig.logger.error("Error loading spawners from entity list", e);
             }
@@ -286,12 +286,12 @@ public class ItemMobSpawner extends ItemBlock {
 
     public static boolean isEntityValidForSpawner(Class<? extends Entity> entityClass) {
         if (entityClass == null) return false;
-        
+
         String name = ENTITY_CLASS_TO_NAME_CACHE.get(entityClass);
         if (name == null) {
             name = (String) EntityList.classToStringMapping.get(entityClass);
         }
-        
+
         return name != null && shouldRegisterEntity(entityClass, name);
     }
 }
