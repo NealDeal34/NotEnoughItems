@@ -41,18 +41,11 @@ jobs:
             git add .
             git commit -m "Apply spotless formatting [skip ci]"
             
-            # 获取当前 tag 名称
-            TAG_NAME=${GITHB_REF#refs/tags/}
-            echo "Current tag: $TAG_NAME"
+            # 只推送提交，不操作标签
+            # 使用完整引用路径避免冲突
+            git push origin HEAD:refs/heads/${{ github.ref_name }} --force
             
-            # 创建新的轻量标签（指向当前提交）
-            NEW_TAG_NAME="${TAG_NAME}-formatted"
-            git tag "${NEW_TAG_NAME}"
-            
-            # 推送新标签
-            git push origin "${NEW_TAG_NAME}"
-            
-            echo "Spotless formatting applied. New tag created: ${NEW_TAG_NAME}"
+            echo "Spotless formatting applied and changes pushed"
           else
             echo "No files needed formatting"
           fi
@@ -61,6 +54,3 @@ jobs:
     needs: spotless-format
     uses: GTNewHorizons/GTNH-Actions-Workflows/.github/workflows/release-tags.yml@master
     secrets: inherit
-    with:
-      # 如果release-tags workflow支持自定义标签名，可以传递新标签名
-      tag_name: ${{ needs.spotless-format.outputs.new_tag || github.ref_name }}-formatted
