@@ -1,50 +1,66 @@
-name: Build and Deploy
+name: Release tagged build
 
 on:
+  workflow_dispatch:
   push:
-    branches: [ main, master ]
-  pull_request:
-    branches: [ main, master ]
+    tags: [ '*' ]
+
+permissions:
+  contents: write
 
 jobs:
-  build:
+  spotless-format:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-      with:
-        # 这很重要：获取所有分支和标签信息
-        fetch-depth: 0
-        # 明确指定要检出的ref
-        ref: ${{ github.ref }}
-    
-    - name: Set up JDK
-      uses: actions/setup-java@v4
-      with:
-        java-version: '17'
-        distribution: 'temurin'
-    
-    - name: Build with Gradle
-      run: ./gradlew build
-    
-    - name: Get branch name
-      id: get_branch
-      run: |
-        # 安全地获取分支名，避免与标签冲突
-        BRANCH_NAME=${GITHUB_REF#refs/heads/}
-        echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
-    
-    - name: Configure Git
-      run: |
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action"
-    
-    - name: Commit and push changes
-      run: |
-        # 添加更改
-        git add .
-        
-        # 提交更改
-        git commit -m "Apply spotless formatting [skip ci]" || exit 0
-        
-        # 安全推送：明确推送当前分支
-        git push origin HEAD:${{ github.ref }}
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Run spotlessApply
+        run: |
+          chmod +x gradlew || true
+          ./gradlew spotlessApply || true
+          
+          # 检查是否有文件被格式化
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "Files were formatted by spotless"
+            
+            # 配置 git
+            git config --local user.email "github-actions[bot]@users.noreply.github.com"
+            git config --local user.name "github-actions[bot]"
+            
+            # 提交格式化更改
+            git add .
+            git commit -m "Apply spotless formatting [skip ci]"
+            
+            # 获取当前 tag 名称
+            TAG_NAME=${GITHB_REF#refs/tags/}
+            echo "Current tag: $TAG_NAME"
+            
+            # 创建新的轻量标签（指向当前提交）
+            NEW_TAG_NAME="${TAG_NAME}-formatted"
+            git tag "${NEW_TAG_NAME}"
+            
+            # 推送新标签
+            git push origin "${NEW_TAG_NAME}"
+            
+            echo "Spotless formatting applied. New tag created: ${NEW_TAG_NAME}"
+          else
+            echo "No files needed formatting"
+          fi
+
+  release-tags:
+    needs: spotless-format
+    uses: GTNewHorizons/GTNH-Actions-Workflows/.github/workflows/release-tags.yml@master
+    secrets: inherit
+    with:
+      # 如果release-tags workflow支持自定义标签名，可以传递新标签名
+      tag_name: ${{ needs.spotless-format.outputs.new_tag || github.ref_name }}-formatted
