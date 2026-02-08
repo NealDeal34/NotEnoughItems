@@ -35,7 +35,7 @@ public class ItemMobSpawner extends ItemBlock {
     public static int idPig = 90;
     private static boolean loaded = false;
 
-    //For asm
+    // For asm
     public static int placedX;
     public static int placedY;
     public static int placedZ;
@@ -45,9 +45,9 @@ public class ItemMobSpawner extends ItemBlock {
         placedY = y;
         placedZ = z;
     }
-    
+
     public static int[] getLastPlacedPosition() {
-        return new int[]{placedX, placedY, placedZ};
+        return new int[] { placedX, placedY, placedZ };
     }
 
     public ItemMobSpawner() {
@@ -64,13 +64,13 @@ public class ItemMobSpawner extends ItemBlock {
     @Override
     public boolean onItemUse(ItemStack itemstack, EntityPlayer entityplayer, World world, int x, int y, int z, int side,
             float hitX, float hitY, float hitZ) {
-        
+
         placedX = x;
         placedY = y;
         placedZ = z;
-        
+
         boolean placed = super.onItemUse(itemstack, entityplayer, world, x, y, z, side, hitX, hitY, hitZ);
-        
+
         if (placed && !world.isRemote) {
             TileEntity tileEntity = world.getTileEntity(x, y, z);
             if (tileEntity instanceof TileEntityMobSpawner) {
