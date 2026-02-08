@@ -35,6 +35,21 @@ public class ItemMobSpawner extends ItemBlock {
     public static int idPig = 90;
     private static boolean loaded = false;
 
+    //For asm
+    public static int placedX;
+    public static int placedY;
+    public static int placedZ;
+
+    public static void setLastPlacedPosition(int x, int y, int z) {
+        placedX = x;
+        placedY = y;
+        placedZ = z;
+    }
+    
+    public static int[] getLastPlacedPosition() {
+        return new int[]{placedX, placedY, placedZ};
+    }
+
     public ItemMobSpawner() {
         super(Blocks.mob_spawner);
         hasSubtypes = true;
@@ -49,15 +64,22 @@ public class ItemMobSpawner extends ItemBlock {
     @Override
     public boolean onItemUse(ItemStack itemstack, EntityPlayer entityplayer, World world, int x, int y, int z, int side,
             float hitX, float hitY, float hitZ) {
+        
+        placedX = x;
+        placedY = y;
+        placedZ = z;
+        
         boolean placed = super.onItemUse(itemstack, entityplayer, world, x, y, z, side, hitX, hitY, hitZ);
-
+        
         if (placed && !world.isRemote) {
-            if (world.getTileEntity(x, y, z) instanceof TileEntityMobSpawner) {
-                TileEntityMobSpawner spawner = (TileEntityMobSpawner) world.getTileEntity(x, y, z);
+            TileEntity tileEntity = world.getTileEntity(x, y, z);
+            if (tileEntity instanceof TileEntityMobSpawner) {
+                TileEntityMobSpawner spawner = (TileEntityMobSpawner) tileEntity;
                 String mobType = getMobTypeFromItemStack(itemstack);
                 if (mobType != null) {
-                    NEICPH.sendMobSpawnerID(x, y, z, mobType);
                     spawner.func_145881_a().setEntityName(mobType);
+                    world.markBlockForUpdate(x, y, z);
+                    NEICPH.sendMobSpawnerID(x, y, z, mobType);
                 }
             }
             return true;
