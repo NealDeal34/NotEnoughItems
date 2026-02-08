@@ -34,7 +34,7 @@ public class ItemMobSpawner extends ItemBlock {
     private static final Map<Class<? extends Entity>, String> ENTITY_CLASS_TO_NAME_CACHE = new ConcurrentHashMap<>();
 
     public static int idPig = 90;
-    private static boolean loaded = false;
+    private static volatile boolean loaded = false;
 
     // For asm
     public static int placedX;
@@ -230,10 +230,6 @@ public class ItemMobSpawner extends ItemBlock {
         }
 
         synchronized (ItemMobSpawner.class) {
-            if (loaded) {
-                return;
-            }
-
             try {
                 for (Map.Entry<Class<? extends Entity>, String> entry : ((Map<Class<? extends Entity>, String>) EntityList.classToStringMapping)
                         .entrySet()) {
